@@ -109,16 +109,16 @@ pub fn main() !void {
 
     std.debug.print("Error: {} \n", .{gl.GetError()});
 
-    var shininess: i32 = 32;
-    var specularStrength: f32 = 0.5;
+    //var shininess: i32 = 32;
+    //var specularStrength: f32 = 0.5;
     var mouse_input = true;
 
     while (!window.shouldClose()) {
         const fb_size = window.getFramebufferSize();
         zg.backend.newFrame(@intCast(fb_size[0]), @intCast(fb_size[1]));
 
-        _ = zg.sliderInt("Shininess: ", .{ .v = &shininess, .min = 0, .max = 4096 });
-        _ = zg.sliderFloat("Specular", .{ .v = &specularStrength, .min = 0.0, .max = 1.0 });
+        //_ = zg.sliderInt("Shininess: ", .{ .v = &shininess, .min = 0, .max = 4096 });
+        //_ = zg.sliderFloat("Specular", .{ .v = &specularStrength, .min = 0.0, .max = 1.0 });
 
         if (window.getKey(glfw.Key.t) == glfw.Action.press) {
             if (mouse_input) {
@@ -150,18 +150,27 @@ pub fn main() !void {
         const light_pos: zm.Vec = .{ @sin(angle) * 10.0, 0.0, @cos(angle) * 10.0, 0.0 };
 
         //std.debug.print("Light position: {}", .{light_pos});
+        //const time: f32 = @floatCast(glfw.getTime());
+
+        //const lightcolor = zm.Vec{ zm.sin(time * 2.0), zm.sin(time * 0.7), zm.sin(time * 1.3), 0.0 };
+        const lightcolor = zm.Vec{ 1.0, 1.0, 1.0, 0.0 };
+        const diffusecolor: zm.Vec = lightcolor * @as(zm.Vec, @splat(1.0));
+        const ambientcolor: zm.Vec = diffusecolor * @as(zm.Vec, @splat(1.0));
 
         shader_program.use();
         shader_program.set("view", cam.viewMatrix());
         shader_program.set("projection", projection);
 
         shader_program.set("objectColor", zm.Vec{ 1.0, 0.5, 0.31, 0.0 });
-        shader_program.set("lightColor", zm.Vec{ 1.0, 1.0, 1.0, 0.0 });
-        shader_program.set("lightPos", light_pos);
+        shader_program.set("light.specular", zm.Vec{ 1.0, 1.0, 1.0, 0.0 });
+        shader_program.set("light.diffuse", diffusecolor);
+        shader_program.set("light.ambient", ambientcolor);
+        shader_program.set("light.position", light_pos);
         shader_program.set("viewPos", cam.position);
-        shader_program.set("specularStrength", specularStrength);
-        shader_program.set("ambientStrength", 0.1);
-        shader_program.set("shininess", @as(u32, @intCast(shininess)));
+        shader_program.set("material.ambient", zm.Vec{ 0.0, 0.1, 0.06, 0.0 });
+        shader_program.set("material.diffuse", zm.Vec{ 0.0, 0.5098, 0.5098, 0.0 });
+        shader_program.set("material.specular", zm.Vec{ 0.5019, 0.5019, 0.5019, 0.0 });
+        shader_program.set("material.shininess", 32.0);
 
         var model = zm.identity();
 
@@ -178,6 +187,7 @@ pub fn main() !void {
         light_program.set("model", model);
         light_program.set("view", cam.viewMatrix());
         light_program.set("projection", projection);
+        light_program.set("lightColor", lightcolor);
 
         light_vao.bind();
         gl.DrawArrays(gl.TRIANGLES, 0, 36);
